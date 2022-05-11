@@ -1,39 +1,13 @@
 # ScrollBoard.js
 
-（我的）展示页面：[Demo](https://xzm2000.github.io/ScrollBoard.js/)
+[原作者](https://github.com/qinshaoxuan/ScrollBoard.js)
+[二次修改](https://github.com/xzm2000/ScrollBoard.js)
 
-### 20190112 bug fix：
+（我的）展示页面：[Demo](http://xiaofan7.cn/)
 
-- 对于0题选手固定排位顺序，防止跳来跳去ssssss
-- 对于直接读cf数据改成了倒序读入，遇到赛后提交直接break
+## 注意
+- 为了防止榜单显示错误，自动把用户名中的`.`和` `改为`_`
 
-### 在原作者的基础上修改了以下内容
-
-- 修改滚榜的时候翻题顺序是从左往右
-- 修复总罚时按秒计算的bug（改为每个题的分钟数的加和）
-- 让CE不计入罚时
-- 对于实时当做外榜的应用场景，对于`Waiting`的评测结果也予以展示（由于没有实际应用，不知道是否存在bug）
-- 增加打星队的相关处理
-- 因为本人的应用场景的cf gym比赛的滚榜相关，所以js加了一段hexSha512的计算，然后在获取的时候调用的cf的API接口
-- 对于同罚时的情况，第三关键字改为按照last AC submit id排序
-- 增加了一血标识
-- 为了防止榜单显示错误，自动把用户名中的`.`改为`_`
-
----
-
-以下为原作者信息
-
-ACM竞赛滚榜展示插件，基于JQuery、Bootstrap
-
-展示页面：[Demo](https://qinshaoxuan.github.io/ScrollBoard.js/)
-
-按一次回车（可自行指定）可进行一步，即更新一个队的一个未知结果
-
-Demo里的数据是西南科技大学第十二届校赛的数据，因为队伍实力差距比较大，可能滚榜的观赏性不强，以后有更好的数据会换掉
-
-### V 1.0.0 (2016-07-02)
-
-实现了基本的滚榜展示功能
 
 ## 使用方法
 
@@ -52,8 +26,8 @@ Demo里的数据是西南科技大学第十二届校赛的数据，因为队伍�
     var board = new Board(
         8,
         new Array(4, 4, 4),
-        StringToDate("2012-10-13 19:00:00"),
-        StringToDate("2012-10-16 01:00:00")
+        StringToDate("14/7/2021 09:10:00"),
+        StringToDate("14/7/2021 11:00:00")
     );
     board.showInitBoard();
     $('html').keydown(function(e) {
@@ -73,8 +47,10 @@ Demo里的数据是西南科技大学第十二届校赛的数据，因为队伍�
 
 `Board.keydown()`方法：滚榜时的一步操作，即更新一个队的一个未知结果
 
-`StringToDate(s)` 方法："yyyy-mm-dd hh:mm:ss"格式字符串转Date对象
+`StringToDate(s)` 方法："d/m/y hh:mm:ss"格式字符串转Date对象
 
 ### 获取数据
 
+需要查cpid的最小值
 JS文件中的`getSubmitList()`和`getTeamList()`方法分别为获取提交数据和获取队伍数据，请根据后台JSON数据格式自行修改，代码内有详细的注释说明
+

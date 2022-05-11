@@ -506,84 +506,32 @@ function int64add5(dst, a, b, c, d, e)
  * 
  */
 
-
-
 /**
  * 从服务器获取提交列表，可按后台json格式修改
  * @return {Array<Submit>} 初始化后的Submit对象数组
  */
 
-/*
+
 function getSubmitList() {
     var data = new Array();
     $.ajax({
         type: "GET",
         content: "application/x-www-form-urlencoded",
-        url: "data/12thSubmitData.json",
+        url: "data/judge.json",
         dataType: "json",
         data: {},
         async: false,
         success: function(result) {
-            for (var i in result.data) {
-                var page = result.data[i];
-                for(var j in page.Status){
-                    var sub = page.Status[j];
-                    var ACode = 65;
-                    var startProblemId = 94;
-                    var alphabetId =String.fromCharCode(sub.pid-startProblemId+ACode);
-                    data.push(new Submit(sub.rid, sub.uname, alphabetId, StringToDate(sub.date), sub.status));
+
+            for(var i in result.RECORDS){
+                var sub = result.RECORDS[i];
+                var ACode = 65;
+                var alphabetId =sub.display_id;
+                var res = parseInt(sub.status);
+                if(res!=0){
+                  res = 4;
                 }
-            }
-
-        },
-        error: function() {
-            alert("获取Submit数据失败");
-        }
-    });
-    return data;
-}
-*/
-
-function getSubmitList() {
-	var now=new Date();
-	var nowtime=Math.floor(now/1000);
-	var contestId=211;
-	var key="481827c5d45fc0d1cbf3d694250cff58367d2f08";
-	var secret="feabebab70aad262053478cb971484a389347979";
-	var from="https://codeforces.com/api/contest.status?apiKey="+key+"&contestId="+contestId+"&time="+nowtime+"&apiSig=123456"+hex_sha512("123456/contest.status?apiKey="+key+"&contestId="+contestId+"&time="+nowtime+"#"+secret);
-    var data = new Array();
-    $.ajax({
-        type: "GET",
-        content: "application/x-www-form-urlencoded",
-        //url: "data/status.json",
-		url: from,
-        dataType: "json",
-        data: {},
-        async: false,
-        success: function(result) {
-            //for (var i in result.result) {
-			for (var i = result.result.length - 1 ; i >= 0; i--) {
-				var sub = result.result[i];
-				//if (sub.author.participantType=="PRACTICE") continue;
-				if (sub.author.participantType=="PRACTICE") break;
-				if (sub.author.participantType=="MANAGER") continue;
-				if (sub.author.participantType=="VIRTUAL") continue;
-				var ss=sub.author.members[0].handle;
-				if (ss.indexOf("=")!=-1) 
-				{
-					ss=ss.substr(6,255);
-				}
-				var st=4;
-				while (ss!=ss.replace('.','_')) ss=ss.replace('.','_');
-				if (!("verdict" in sub))
-					st=-1;
-				else{	
-					if (sub.verdict=="OK") st=0;
-					if (sub.verdict=="COMPILATION_ERROR") st=7;
-					if (sub.verdict=="TESTING") st=-1;
-					if (sub.verdict=="SKIPPED") continue;
-				}
-				data.push(new Submit(sub.id, ss, sub.problem.index, sub.creationTimeSeconds*1000+999, st));
+                data.push(new Submit(sub.submit_id, sub.uid, alphabetId, StringToDate(sub.submit_time), res));
             }
 
         },
@@ -599,21 +547,25 @@ function getSubmitList() {
  * 从服务器获取队伍列表，可按后台json格式修改
  * @return {Array<Team>} 初始化后的Team对象数组
  */
-
-/*
 function getTeamList() {
     var data = new Array();
     $.ajax({
         type: "GET",
         content: "application/x-www-form-urlencoded",
-        url: "data/12thTeamData.json",
+        url: "data/judge.json",
         dataType: "json",
         async: false,
         data: {},
         success: function(result) {
-            for (var key in result.users) {
-                var team = result.users[key];
-                data[team.username] = new Team(team.username, team.nickname, null, 1);
+            for (var key in result.RECORDS) {
+                var team = result.RECORDS[key];
+                var name = team.nickname;
+                while (name!=name.replace(' ','_')) name=name.replace(' ','_');
+                while (name!=name.replace('.','_')) name=name.replace('.','_');
+                var girl = false;
+                if(team.gender == "female") girl = true;
+                
+                data[team.uid] = new Team(team.uid, name, null, 1,girl);
             }
         },
         error: function() {
@@ -622,77 +574,60 @@ function getTeamList() {
     });
     return data;
 }
-*/
-function getTeamList() {
-	var now=new Date();
-	var nowtime=Math.floor(now/1000);
-	var contestId=211;
-	var key="481827c5d45fc0d1cbf3d694250cff58367d2f08";
-	var secret="feabebab70aad262053478cb971484a389347979";
-	var from="https://codeforces.com/api/contest.standings?apiKey="+key+"&contestId="+contestId+"&showUnofficial=true&time="+nowtime+"&apiSig=123456"+hex_sha512("123456/contest.standings?apiKey="+key+"&contestId="+contestId+"&showUnofficial=true&time="+nowtime+"#"+secret);
-    var data = new Array();
-    $.ajax({
-        type: "GET",
-        content: "application/x-www-form-urlencoded",
-        //url: "data/ranklist.json",
-		url: from,
-        dataType: "json",
-        async: false,
-        data: {},
-        success: function(result) {
-            for (var key in result.result.rows) {
-                var team = result.result.rows[key].party;
-				var ss=team.members[0].handle;
-				if (ss.indexOf("=")!=-1) 
-				{
-					ss=ss.substr(6,255);
-				}
-				while (ss!=ss.replace('.','_')) ss=ss.replace('.','_');
-				if (team.participantType=="PRACTICE") continue;
-				if (team.participantType=="VIRTUAL") continue;
-				if (team.participantType=="CONTESTANT") 
-                	data[ss] = new Team(ss, ss , null, true);
-				else data[ss] = new Team(ss, ss , null, false);
-				
-            }
-        },
-        error: function() {
-            alert("获取Team数据失败");
+function getTeamNum(s){
+    var sum = 0;
+    var ok = 0;
+    for(var i=0;i<s.length;i++){
+        if(s[i]=='-'){
+            ok = 1;
+            continue;
         }
-    });
-	$.ajax({
-        type: "GET",
-        content: "application/x-www-form-urlencoded",
-        url: "data/acmclub2019.json",
-        dataType: "json",
-        async: false,
-        data: {},
-        success: function(result) {
-            for (var key in result) {
-                var team = result[key];
-				var ss=team.id;
-				if (ss.indexOf("=")!=-1) 
-				{
-					ss=ss.substr(6,255);
-				}
-				while (ss!=ss.replace('.','_')) ss=ss.replace('.','_');
-				if (!data[ss]) continue;
-				data[ss].teamName=team.name;
-            }
-        },
-        error: function() {
-            alert("获取Team数据失败");
+        if(ok == 1){
+            sum = sum*10+parseInt(s[i]);
         }
-    });
-    return data;
+    }
+    return sum;
 }
-
+function PrefixInteger(num, m) {
+    return (Array(m).join(0) + num).slice(-m);
+}
 /**
  * yyyy-mm-dd hh:mm:ss格式转Date
  * @param {Date} s 字符串对应的日期
  */
 function StringToDate(s) {
     var d = new Date();
+    var day = -1,month = -1,year = -1;
+    var sum = 0;
+    for(var i=0;i<s.length;i++){
+        if(s[i] == '/' || s[i]==' '){
+            if(day == -1){
+                day = sum;
+                sum = 0;
+                if(s[i]==' ') break;
+                else continue;
+            }
+            if(month == -1){
+                month = sum;
+                sum = 0;
+                if(s[i]==' ') break;
+                else continue;
+            }
+            if(year == -1){
+                year = sum;
+                sum = 0;
+                if(s[i]==' ') break;
+                else continue;
+            }
+            
+        }else{
+            sum = sum*10+parseInt(s[i]);
+        }
+    }
+    var s1 = "2021-07-14 ";
+    s1 = PrefixInteger(year,4)+"-"+PrefixInteger(month,2)+"-"+PrefixInteger(day,2)+" ";
+    s = s.split(" ")[1];
+    s = s1.concat(s);
     d.setYear(parseInt(s.substring(0, 4), 10));
     d.setMonth(parseInt(s.substring(5, 7) - 1, 10));
     d.setDate(parseInt(s.substring(8, 10), 10));
@@ -756,14 +691,14 @@ function TeamProblem() {
  * @param {String}  teamMember  队员
  * @param {boolean} official     是否计入排名
  */
-function Team(teamId, teamName, teamMember, official) {
+function Team(teamId, teamName, teamMember, official,girl) {
     this.teamId = teamId; //队伍ID
     this.teamName = teamName; //队伍名
     this.teamMember = teamMember; //队员
     this.official = official; //计入排名
     this.solved = 0; //通过数
     this.penalty = 0; //罚时,单位为毫秒
-    this.gender = false; //女队,默认否
+    this.girl = girl; //女队,默认否
     this.submitProblemList = []; //提交题目列表
     this.unkonwnAlphabetIdMap = new Array(); //未知的题目AlphabetId列表
     this.submitList = []; //提交列表
@@ -884,8 +819,8 @@ function TeamCompare(a, b) {
         return a.solved > b.solved ? -1 : 1;
     if (a.penalty != b.penalty) //第二关键字，罚时少者排位高
         return a.penalty < b.penalty ? -1 : 1;
-	if (parseInt(a.lastAC) != parseInt(b.lastAC))
-    	return parseInt(a.lastAC) < parseInt(b.lastAC) ? -1 : 1; //第三关键字，last AC小者排位高
+	// if (parseInt(a.lastAC) != parseInt(b.lastAC))
+ //    	return parseInt(a.lastAC) < parseInt(b.lastAC) ? -1 : 1; //第三关键字，last AC小者排位高
 	return a.teamId.localeCompare(b.teamId);//对于0题队固定顺序
 }
 
@@ -914,6 +849,7 @@ function Board(problemCount, medalCounts, startTime, freezeBoardTime) {
     this.displayTeamPos = 0; //当前展示的队伍位置
     this.noAnimate = true; //当前无动画进行
 	this.FBList = [];
+    this.nowPos = 0;
     //根据题目数量设置alphabetId
     var ACode = 65;
     for (var i = 0; i < problemCount; i++)
@@ -950,6 +886,7 @@ function Board(problemCount, medalCounts, startTime, freezeBoardTime) {
         this.teamCount++;
     }
     this.displayTeamPos = this.teamCount - 1;
+    this.nowPos = this.teamCount-1;
     //队伍排序
     this.teamNowSequence.sort(function(a, b) {
         return TeamCompare(a, b);
@@ -969,10 +906,13 @@ Board.prototype.updateTeamSequence = function() {
         return TeamCompare(a, b);
     });
 
-
+    for(var i = 0;i<this.teamCount;i++){
+    //   console.log(teamSequence[i].teamId + " " + teamSequence[i].solved + " "+ teamSequence[i].penalty);
+    }
     //找到第一个改变的位置，即为排名上升的队伍要插入的位置
     var toPos = -1;
     for (var i = 0; i < this.teamCount; i++) {
+
         if (this.teamNextSequence[i].teamId != teamSequence[i].teamId) {
             toPos = i;
             break;
@@ -991,11 +931,14 @@ Board.prototype.updateTeamSequence = function() {
  * 不断更新最后一个unkonwn队伍的题目状态，直到排名发生变化或者无题目可更新
  * @return {Team} 返回正在更新的Team对象，没有则返回null
  */
+
 Board.prototype.UpdateOneTeam = function() {
     //得到需要更新的队伍在当前排名中的的位置
-    var updateTeamPos = this.teamCount - 1;
-    while (updateTeamPos >= 0 && this.teamNextSequence[updateTeamPos].countUnkonwnProblme() < 1)
-        updateTeamPos--;
+    var updateTeamPos = this.nowPos;
+    
+    // console.log(this.nowPos);
+    // while (updateTeamPos >= 0 && this.teamNextSequence[updateTeamPos].countUnkonwnProblme() < 1)
+    //     updateTeamPos--;
     //如果有队伍可更新
     if (updateTeamPos >= 0) {
         //不断更新队伍题目状态，直到排名发生变化或者无题目可更新
@@ -1005,6 +948,9 @@ Board.prototype.UpdateOneTeam = function() {
             return this.teamNextSequence[updateTeamPos];
         }
     }
+    this.nowPos = this.nowPos-1;
+    // return null;
+    if (updateTeamPos >= 0) return this.teamNextSequence[updateTeamPos];
     return null;
 }
 
@@ -1053,6 +999,7 @@ Board.prototype.showInitBoard = function() {
         //计算每支队伍的排名和奖牌情况
         var rank = maxRank-1;
         var medal = -1;
+        var girl = team.girl;
         if (team.solved != 0) {
 			if (team.official==true)
 			{
@@ -1112,6 +1059,9 @@ Board.prototype.showInitBoard = function() {
         //设置奖牌对应的CSS样式
         if (medal != -1)
             $("#team_" + team.teamId).addClass(this.medalStr[medal]);
+        if(girl == true){
+            $("#team_" + team.teamId).addClass("girl");
+        }
 
     }
 
@@ -1229,12 +1179,17 @@ Board.prototype.updateTeamStatus = function(team) {
             for (var i in thisBoard.medalStr) {
                 $(".team-item").removeClass(thisBoard.medalStr[i]);
             }
+            // 移除女队
+            for (var i in thisBoard.medalStr) {
+                $(".team-item").removeClass("girl");
+            }
 
             //对于每个队计算排名和奖牌情况
             for (var i = 0; i < thisBoard.teamCount; i++) {
                 var t = thisBoard.teamNextSequence[i];
                 var medal = -1;
                 var rankValue = maxRank-1;
+                var girl = t.girl;
                 if (t.solved != 0) {
 					if (t.official==true)
 					{
@@ -1252,9 +1207,12 @@ Board.prototype.updateTeamStatus = function(team) {
 				
 
                 $team = $("div[team-id=\"" + t.teamId + "\"]");
-
+                
                 if (medal != -1)
                     $team.addClass(thisBoard.medalStr[medal]);
+                if(girl == true){
+                    $team.addClass("girl");
+                }
 				if (t.official==true)
                 	$("#team_" + t.teamId + " .rank").html(rankValue);
 				else 
